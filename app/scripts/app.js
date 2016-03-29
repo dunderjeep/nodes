@@ -78,4 +78,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     app.$.paperDrawerPanel.closeDrawer();
   };
 
+    app.firebaseURL = 'https://lilymander.firebaseio.com';
+    app.ref = new Firebase(app.firebaseURL);
+
+    app.pushNode = function(event){
+	console.log(event);
+    };
 })(document);
