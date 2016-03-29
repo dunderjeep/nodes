@@ -1,0 +1,17 @@
+[debug] ----------------------------------------------------------------------
+[debug] Command:      C:\Program Files\nodejs\node.exe C:\Users\cliff\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase deploy
+[debug] Platform:     win32
+[debug] Node Version: v5.9.0
+[debug] Time:         Mon Mar 28 2016 22:45:23 GMT-0400 (Eastern Daylight Time)
+[debug] ----------------------------------------------------------------------
+[debug] 
+[debug] >>> HTTP REQUEST GET https://admin.firebase.com/firebase/lilymander/token?token=XXX 
+[debug] <<< HTTP RESPONSE 200
+[debug] >>> HTTP REQUEST GET https://admin.firebase.com/firebase/lilymander/token?token=XXX 
+[debug] <<< HTTP RESPONSE 200
+[info] 
+[info] === Deploying to 'lilymander'...
+[info] 
+[info] i  deploying hosting
+[info] i  preparing . directory for upload...
+[debug] >>> HTTP REQUEST PUT https://deploy.firebase.com/firebase/lilymander/uploads/-KE-FiR68uzt6J6RyVXC?token=XXX&fileCount=2371&message= 

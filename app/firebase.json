@@ -1,0 +1,9 @@
+{
+  "firebase": "lilymander",
+  "public": ".",
+  "ignore": [
+    "firebase.json",
+    "**/.*",
+    "**/node_modules/**"
+  ]
+}
