@@ -15,8 +15,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <meta charset="utf-8">
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="generator" content="Polymer Starter Kit">
-  <title>Polymer Starter Kit</title>
+  <meta name="generator" content="Nodes">
+  <title>Nodes</title>
 
   <!-- Place favicon.ico in the `app/` directory -->
 
@@ -66,8 +66,24 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
   <template is="dom-bind" id="app">
 
-    <!-- Uncomment next block to enable Service Worker support (1/2) -->
-    <!--
+    <node-auth id="auth"
+               user="{{user}}"
+               location="[[firebaseURL]]"
+               user="{{user}}">
+    </node-auth>
+
+    <node-data location="[[firebaseURL]]"
+               nodes="{{nodes}}"
+               user="{{user}}">
+    </node-data>
+
+    <node-view class="flex"
+               route="{{route}}"
+               nodes="{{nodes}}"
+               on-sign-out="signOut">
+    </node-view>
+
+
     <paper-toast id="caching-complete"
                  duration="6000"
                  text="Caching complete! This app will work offline.">
@@ -82,7 +98,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                          cache-config-file="cache-config.json">
       </platinum-sw-cache>
     </platinum-sw-register>
-    -->
 
   </template>
 

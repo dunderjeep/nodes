@@ -16,3 +16,7 @@ body {
 .page-title {
   outline: none;
 }
+
+.clear-btn {
+  font-size: 14px;
+}

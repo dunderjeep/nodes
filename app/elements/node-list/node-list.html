@@ -1,0 +1,73 @@
+<link rel="import" href="../node-item/node-item.html">
+
+<dom-module id="node-list">
+
+  <template>
+
+    <style>
+      :host {
+        display: block;
+      }
+      .no-more-msg {
+        min-height: 40px;
+        font-family: 'Roboto Slab';
+        font-size: 20px;
+        color: #BDBDBD;
+        cursor: default;
+        padding-left: 67px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      node-item:first-of-type {
+        margin-top: 0;
+      }
+      node-item {
+        margin: 16px 0;
+      }
+    </style>
+
+    <p class="no-more-msg" hidden="[[_nodesEmpty(nodes.length)]]">No more nodes! You're all caught up</p>
+
+    <template is="dom-repeat"
+              items="{{nodes}}"
+              as="node"
+              filter="{{_computeFilter(filterBy)}}"
+              observe="isComplete">
+      <node-item node="{{node}}"></node-item>
+    </template>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'node-list',
+      properties: {
+        nodes: Array,
+        filterBy: {
+          type: String,
+          value: 'all'
+        }
+      },
+      _nodesEmpty: function(length) {
+        return !!length;
+      },
+      _computeFilter: function(filterBy) {
+        if (filterBy) {
+          // If filterBy is 'all', return a filter that always returns
+          // the node
+          if (filterBy === 'all') {
+            return function() {
+              return true;
+            };
+          }
+          // Handle 'completed', or its inverse, 'active'
+          var ifComplete = (filterBy === 'completed');
+          return function(item) {
+            return item.isComplete === ifComplete;
+          };
+        }
+      }
+    });
+  </script>
+</dom-module>
