@@ -125,9 +125,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <span>Completed</span>
           </a>
 
-	  <a data-route="completed" href="/graph" tabindex="-1" on-click="closeDrawer">
-            <iron-icon icon="node-icons:assignment-turned-in"></iron-icon>
-            <span>Completed</span>
+	  <a data-route="graph" href="/graph" tabindex="-1" on-click="closeDrawer">
+            <span>Graph</span>
           </a>
         </paper-menu>
       </div>
@@ -165,7 +164,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           </node-list>
 
           <node-input on-add-node="addNode"></node-input>
-
+	  
         </div>
       </paper-header-panel>
     </paper-drawer-panel>
