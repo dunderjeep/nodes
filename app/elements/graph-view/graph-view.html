@@ -3,6 +3,12 @@
   <template>
     <style></style>
     Graph View
+    <div id="svg"></div>
+    <ul>
+      <li>https://gist.github.com/Hypercubed/37dade46dbf5e447cc95</li>
+      <li>http://stackoverflow.com/questions/31677159/polymer-d3-how-to-send-json-from-element-attribute-to-template</li>
+      <li>https://www.dashingd3js.com/adding-an-svg-element</li>
+    </ul>
   </template>
   <script>
     Polymer({
@@ -17,43 +23,23 @@
           reflectToAttribute: true
         }
       },
-      attached: function() {
-        // Delegate focus events with useCapture to figure out if one of our
-        // child elements is being focused or if we're about to blur
-        // All of this fanciness is for the sake of the raised paper effect
-        this.addEventListener('focus', this._activate.bind(this), true);
-        this.addEventListener('blur', this._deactivate.bind(this), true);
-        this.addEventListener('mouseenter', this._activate.bind(this));
-        this.addEventListener('mouseleave', this._deactivate.bind(this));
-      },
-      detached: function() {
-        this.removeEventListener('focus', this._activate.bind(this), true);
-        this.removeEventListener('blur', this._deactivate.bind(this), true);
-        this.removeEventListener('mouseenter', this._activate.bind(this));
-        this.removeEventListener('mouseleave', this._deactivate.bind(this));
-      },
-      _activate: function() {
-        this.active = true;
-      },
-      _deactivate: function() {
-        this.active = false;
-      },
-      _computeElevation: function(active) {
-        return active ? 2 : 0;
-      },
-      _computeLabelId: function(uid) {
-        return 'nodeItemLabel-' + uid;
-      },
-      // If enter was pressed, unfocus the text input
-      _checkConfirmation: function(e) {
-        if (e.keyCode === 13) {
-          e.preventDefault();
-          e.target.blur();
-        }
-      },
-      _onDelete: function() {
-        this.fire('delete-node', {node: this.node});
+      ready: function() {
+    var svg = d3.select(this.$.svg)
+    .append("svg")
+    .attr("width", 50)
+    .attr("height", 50)
+    .append("circle")
+    .attr("cx", 25)
+    .attr("cy", 25)
+    .attr("r", 25)
+    .style("fill", "red");
       }
     });
+    function mousedown(){
+    var point = d3.mouse(this),
+    node = {x: point[0], y: point[1]};
+    console.log(node);
+    };
+        function mousemove(){};
   </script>
 </dom-module>
