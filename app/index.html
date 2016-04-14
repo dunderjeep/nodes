@@ -55,7 +55,7 @@
   
 </head>
 
-<body unresolved class=>
+<body unresolved class="fullbleed vertical layout">
   <!-- build:remove -->
   <span id="browser-sync-binding"></span>
   <!-- endbuild -->
@@ -63,7 +63,6 @@
   <template is="dom-bind" id="app">
 
     <node-auth id="auth"
-               user="{{user}}"
                location="[[firebaseURL]]"
                user="{{user}}">
     </node-auth>
@@ -80,7 +79,7 @@
                on-sign-out="signOut">
     </node-view>
     -->
-    <graph-view class="flex" on-sign-out="sign-out" nodes="{{nodes}}"></graph-view>
+    <graph-view class="flex" on-sign-out="signOut" nodes="{{nodes}}"></graph-view>
 
     <paper-toast id="caching-complete"
                  duration="6000"
