@@ -1,6 +1,6 @@
 <link rel="import" href="../../bower_components/iron-localstorage/iron-localstorage.html">
 
-<dom-module id="node-data">
+<dom-module id="link-data">
 
   <template>
 
@@ -8,7 +8,7 @@
     </style>
 
     <firebase-collection location="{{userLocation}}"
-                         data="{{fbNodes}}"
+                         data="{{fbLinks}}"
                          on-firebase-value="_firebaseLoaded">
     </firebase-collection>
 
@@ -17,17 +17,17 @@
          old nodes if they start the app offline.
          This SHOULD NOT write to Firebase. If the user has cleared their
          localstorage, it should not nullify everything saved in Firebase. -->
-    <iron-localstorage name="polymer-node"
+    <iron-localstorage name="polymer-link"
                        on-iron-localstorage-load="_backupLoaded"
-                       value="{{backupNodes}}">
+                       value="{{backupLinks}}">
     </iron-localstorage>
 
   </template>
   <script>
     Polymer({
-      is: 'node-data',
+      is: 'link-data',
       properties: {
-        nodes: {
+        links: {
           notify: true
         },
         user: {
@@ -40,18 +40,18 @@
       // Setup user ref in firebase if auth succeeds
       _userChanged: function(user) {
         if (user) {
-          this.userLocation = [this.location, 'users', this.user.uid, 'nodes'].join('/');
+          this.userLocation = [this.location, 'users', this.user.uid, 'links'].join('/');
         }
       },
       _firebaseLoaded: function() {
         this._firebaseConnected = true;
-        this.nodes = this.fbNodes;
-        this.backupNodes = this.fbNodes;
-        this.linkPaths('fbNodes', 'nodes');  
+        this.links = this.fbLinks;
+        this.backupLInks = this.fbLinks;
+        this.linkPaths('fbLinks', 'links');  
       },
       _backupLoaded: function() {
         if (!this._firebaseConnected) {
-          this.nodes = this.backupNodes.slice();
+          this.links = this.backupLinks.slice();
         }
       }
     });

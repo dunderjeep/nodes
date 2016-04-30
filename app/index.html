@@ -50,7 +50,7 @@
   <style is="custom-style" include="shared-styles"></style>
 
   <!-- build:js bower_components/d3/d3.min.js -->
-  <script src="bower_components/d3/d3.min.js"></script>
+  <script src="bower_components/d3/d3.js"></script>
   <!-- endbuild -->  
   
 </head>
@@ -72,6 +72,11 @@
                user="{{user}}">
     </node-data>
 
+    <link-data location="[[firebaseURL]]"
+               links="{{links}}"
+               user="{{user}}">
+    </link-data>
+
     <!--
     <node-view class="flex"
                route="{{route}}"
@@ -79,7 +84,7 @@
                on-sign-out="signOut">
     </node-view>
     -->
-    <graph-view class="flex" on-sign-out="signOut" nodes="{{nodes}}"></graph-view>
+    <graph-view class="flex" on-sign-out="signOut" nodes="{{nodes}}" links="{{links}}"></graph-view>
 
     <paper-toast id="caching-complete"
                  duration="6000"
