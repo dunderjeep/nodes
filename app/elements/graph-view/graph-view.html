@@ -25,7 +25,7 @@
       <h1>Nodes</h1>
       <div id="svg"></div>
     </div>
-    
+    <a href="http://bl.ocks.org/mbostock/3808218">General Update Pattern</a>
   </template>
   
   <script>
@@ -34,90 +34,93 @@
       var width = 500,
           height = 500;
 
-//      var nodes = graphView.nodes || [],
-  //      links = graphView.links || [];
-
-    var nodes = [], links = [];
+      var nodes = graphView.nodes || [],
+          links = graphView.links || [];
     
-     var force = d3.layout.force()
-                   .nodes(nodes)
-                   .links(links)
-                   .charge(-120) 
-                   .linkDistance(30)
-                   .size([width, height])
-                   .on("tick", tick);
+      var force = d3.layout.force()
+                    .nodes(nodes)
+                    .links(links)
+                    .charge(-120) 
+                    .linkDistance(30)
+                    .size([width, height])
+                    .on("tick", tick);
 
-          var svg = d3.select(el)
-                      .append("svg")
-                      .attr("width", width)
-                      .attr("height", height)
-                      .attr("style", "outline: thin solid red;")
-                      .on("dblclick", function(d){
-                                        var point = d3.mouse(this);
-                                        graphView.push("nodes", { x: point[0], y: point[1]});
-    });
+      var svg = d3.select(el)
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height)
+                  .attr("style", "outline: thin solid red;")
+                  .on("dblclick", function(d){
+                        var point = d3.mouse(this);
+                        graphView.push("nodes", { x: point[0], y: point[1]});
+                      });
 
-    var link = svg.selectAll(".node");
-    var node = svg.selectAll(".link");
+      var link = svg.selectAll(".node");
+      var node = svg.selectAll(".link");
     
-    function tick() {    
-      link.attr("x1", function(d){ return d.source.x; })
-          .attr("y1", function(d){ return d.source.y; })
-          .attr("x2", function(d){ return d.target.x; })
-          .attr("y2", function(d){ return d.target.y; });
-
-      node.attr("cx", function(d) { return d.x; })
-          .attr("cy", function(d) { return d.y; });
-    }
-
-    var update = function(){
-    nodes = graphView.nodes;
-    links = graphView.links || [];
+      function tick() {
     
-    force.links(links);
-      link = link.data(force.links(), function(d) { return d.source.__firebaseKey__ + "-" + d.target.__firebaseKey__; });
-      link.enter().insert("line", ".node").attr("stroke", function(d){ return "#000";});
-      link.exit().remove(); 
+        link.attr("x1", function(d){ return d.source.x; })
+            .attr("y1", function(d){ return d.source.y; })
+            .attr("x2", function(d){ return d.target.x; })
+            .attr("y2", function(d){ return d.target.y; });
 
-    force.nodes(nodes);
-
-      node = node.data(force.nodes(), function(d) { return d.__firebaseKey__; });
-      node.enter()
-          .append("circle")
-          .attr("class", "node")
-          .attr("r", 5)
-          .attr("fill", "#ff7f0e");
-      node.call(force.drag);
-      node.exit().remove();
-      
-      force.start();
-      
-    };
-      return {
-         svg: svg,
-         update: update
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
       }
+
+      var update = function(){
+
+        nodes = graphView.nodes || [];
+        links = graphView.links || [];
+    
+        force.links(links);
+    
+        link = link.data(force.links(), function(d) { return d.source.__firebaseKey__ + "-" + d.target.__firebaseKey__; });
+        link.enter().insert("line", ".node").attr("stroke", function(d){ return "#000";});
+        link.exit().remove(); 
+
+        force.nodes(nodes);
+
+        node = node.data(force.nodes(), function(d) { return d.__firebaseKey__; });
+        node.enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .attr("fill", "#ff7f0e")
+            .call(force.drag);
+        node.exit().remove();
+      
+        force.start();      
+      };
+    
+      return {
+        svg: svg,
+        update: update
+      }
+    
     };
+    
     Polymer({
       is: 'graph-view',
       properties: {  
         nodes: {
           type: Array
-    },
-    links: {
-      type: Array
-    }
+        },
+        links: {
+          type: Array
+        }
       },
     
       observers: ['_nodesChanged(nodes.splices)', '_nodesChanged(links.splices)'],
     
       _nodesChanged: function() {
         this.graph.update();
-    },
+      },
       
-    ready: function() {    
-      this.graph = Graph(this.$.svg, this);  
-    }
+      ready: function() {    
+        this.graph = Graph(this.$.svg, this);  
+      }
+    
     });
   </script>
 </dom-module>
