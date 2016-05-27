@@ -11,8 +11,8 @@
       }
 
       .link {
-      stroke: #000;
-      stroke-width: 1.5px;
+        stroke: #000;
+        stroke-width: 1.5px;
       }
 
       .node {
@@ -24,8 +24,8 @@
     <div class="flex">
       <h1>Nodes</h1>
       <div id="svg"></div>
+      <iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
     </div>
-    <a href="http://bl.ocks.org/mbostock/3808218">General Update Pattern</a>
   </template>
   
   <script>
@@ -33,13 +33,8 @@
 
       var width = 500,
           height = 500;
-
-      var nodes = graphView.nodes || [],
-          links = graphView.links || [];
-    
+   
       var force = d3.layout.force()
-                    .nodes(nodes)
-                    .links(links)
                     .charge(-120) 
                     .linkDistance(30)
                     .size([width, height])
@@ -51,14 +46,44 @@
                   .attr("height", height)
                   .attr("style", "outline: thin solid red;")
                   .on("dblclick", function(d){
-                        var point = d3.mouse(this);
-                        graphView.push("nodes", { x: point[0], y: point[1]});
-                      });
-
-      var link = svg.selectAll(".node");
-      var node = svg.selectAll(".link");
+                    var point = d3.mouse(this);
+                    graphView.push("nodes", { x: point[0], y: point[1] });
+                  })
+                  .on("click", function(d){
+                    var node = d3.select(this);
+                    console.log("node", node); 
+                  });
     
-      function tick() {
+      var link = svg.selectAll(".link");
+      var node = svg.selectAll(".node"); 
+
+      var update = function(){
+
+        nodes = graphView.nodes || [];
+        links = graphView.links || [];
+
+        force.links(links);    
+        link = link.data(force.links());
+        link.enter().insert("line", ".node").attr("stroke", function(d){ return "#000";});
+        link.exit().remove(); 
+
+        force.nodes(nodes);
+        node = node.data(force.nodes());    
+        node.enter().append("circle")
+            .attr("class", "node")
+            .attr("r", 5)
+            .attr("fill", "#ff7f0e")
+            .call(force.drag);
+        node.exit().remove();
+  
+        force.start();
+      };
+
+      var play = function() {
+        node.data(force.nodes());
+    };
+
+          function tick() {
     
         link.attr("x1", function(d){ return d.source.x; })
             .attr("y1", function(d){ return d.source.y; })
@@ -68,34 +93,11 @@
         node.attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
       }
-
-      var update = function(){
-
-        nodes = graphView.nodes || [];
-        links = graphView.links || [];
-    
-        force.links(links);
-    
-        link = link.data(force.links(), function(d) { return d.source.__firebaseKey__ + "-" + d.target.__firebaseKey__; });
-        link.enter().insert("line", ".node").attr("stroke", function(d){ return "#000";});
-        link.exit().remove(); 
-
-        force.nodes(nodes);
-
-        node = node.data(force.nodes(), function(d) { return d.__firebaseKey__; });
-        node.enter().append("circle")
-            .attr("class", "node")
-            .attr("r", 5)
-            .attr("fill", "#ff7f0e")
-            .call(force.drag);
-        node.exit().remove();
-      
-        force.start();      
-      };
     
       return {
         svg: svg,
-        update: update
+        update: update,
+        start: play
       }
     
     };
@@ -111,15 +113,21 @@
         }
       },
     
-      observers: ['_nodesChanged(nodes.splices)', '_nodesChanged(links.splices)'],
+      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
     
-      _nodesChanged: function() {
-        this.graph.update();
+        _fBChanged: function(e) {
+         this.graph.update();
       },
-      
+     
       ready: function() {    
         this.graph = Graph(this.$.svg, this);  
+      },
+
+      signOut: function() {
+        this.fire('sign-out');
       }
+    
+    
     
     });
   </script>

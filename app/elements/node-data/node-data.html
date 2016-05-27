@@ -9,7 +9,7 @@
 
     <firebase-collection location="{{userLocation}}"
                          data="{{fbNodes}}"
-                         on-firebase-value="_firebaseLoaded">
+                         on-firebase-value="_firebaseLoaded2"
     </firebase-collection>
 
     <!-- Backfill todos from localstorage. This prevents an initial flash while
@@ -17,6 +17,7 @@
          old nodes if they start the app offline.
          This SHOULD NOT write to Firebase. If the user has cleared their
          localstorage, it should not nullify everything saved in Firebase. -->
+    
     <iron-localstorage name="polymer-node"
                        on-iron-localstorage-load="_backupLoaded"
                        value="{{backupNodes}}">
@@ -35,7 +36,7 @@
         },
         _firebaseConnected: {
           value: false
-        }
+        }    
       },
       // Setup user ref in firebase if auth succeeds
       _userChanged: function(user) {
@@ -45,10 +46,16 @@
       },
       _firebaseLoaded: function() {
         this._firebaseConnected = true;
+        this.backupNodes = this.nodes;
+        this.linkPaths('fbNodes', 'nodes');
+    },
+    _firebaseLoaded2: function() {
+        this._firebaseConnected = true;
         this.nodes = this.fbNodes;
         this.backupNodes = this.fbNodes;
-        this.linkPaths('fbNodes', 'nodes');  
-      },
+        this.linkPaths('fbNodes', 'nodes');
+    },
+
       _backupLoaded: function() {
         if (!this._firebaseConnected) {
           this.nodes = this.backupNodes.slice();
