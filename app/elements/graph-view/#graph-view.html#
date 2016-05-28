@@ -1,0 +1,168 @@
+<dom-module id="graph-view">
+
+  <template>
+    
+    <style>
+      .flex {
+	display: flex;
+        flex-direction: column;
+	align-items: center;
+	justify-content: center;
+      }
+
+      .link {
+        stroke: #000;
+        stroke-width: 1.5px;
+      }
+
+      .node {
+      	r: 5;
+        cursor: move;
+        fill: black;
+      }
+      
+      .mouseenter {
+        fill: red;
+	r: 10;
+      }
+    </style>
+    
+    <div class="flex">
+      <h1>Nodes</h1>
+      <div id="svg"></div>
+      <iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
+    </div>
+  </template>
+  
+  <script>
+    function Graph(el, graphView) {
+
+      var width = 500,
+          height = 500;
+   
+      var force = d3.layout.force()
+                    .charge(-120) 
+                    .linkDistance(30)
+                    .size([width, height])
+                    .on("tick", tick);
+
+      var svg = d3.select(el)
+                  .append("svg")
+                  .attr("width", width)
+                  .attr("height", height)
+                  .attr("style", "outline: thin solid red;")
+                  .on("dblclick", dblclick);
+    
+      var link = svg.selectAll(".link");
+      var node = svg.selectAll(".node");
+
+      var update = function(){
+
+        nodes = graphView.nodes || [];
+        links = graphView.links || [];
+
+        force.links(links);    
+        link = link.data(force.links());
+        link.enter().insert("line", ".node").attr("class", "link");
+        link.exit().remove(); 
+
+        force.nodes(nodes);
+        node = node.data(force.nodes());    
+        node.enter().append("circle")
+            .attr("class", "node")
+	    .on("mouseenter", mouseenter)
+	    .on("mouseout", mouseout)
+	    .on("click", click)
+            .call(force.drag);  
+	    
+        node.exit().remove();  
+
+	force.start();
+      };
+
+      function dblclick() {
+        var point = d3.mouse(this);
+        graphView.push("nodes", { x: point[0], y: point[1]});     
+      }
+
+      function mouseenter(d) {
+	d3.select(this).classed("mouseenter", true);
+      };
+
+      function mouseout(d) {
+	d3.select(this).classed("mouseenter", false);
+      };
+
+      var first = 0;
+    
+      var newLink  = {
+        source: '',
+        target: ''
+      };	
+      
+      function click() {
+        var node = d3.select(this).attr("__firebaseKey__", function(d) {
+          if (first === 0){
+            newLink.source = {"__firebaseKey__": d.__firebaseKey__};
+            first++;
+          } else {
+            newLink.target =  {"__firebaseKey__": d.__firebaseKey__};
+	    graphView.push("links", newLink);
+            first--;
+    	    newLink  = {
+			source: '',
+        	       	target: ''
+      		     }; 
+          }           
+        });
+      };    
+    
+      function tick() {
+    
+        link.attr("x1", function(d){ return d.source.x; })
+            .attr("y1", function(d){ return d.source.y; })
+            .attr("x2", function(d){ return d.target.x; })
+            .attr("y2", function(d){ return d.target.y; });
+	    
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+      }
+    
+      return {
+        svg: svg,
+        update: update
+      }
+    
+    };
+    
+    Polymer({
+      is: 'graph-view',
+      properties: {  
+        nodes: {
+          type: Array
+        },
+        links: {
+          type: Array
+        }
+      },
+    
+      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
+    
+        _fBChanged: function(e) {
+         this.graph.update();
+      },
+     
+      ready: function() {    
+        this.graph = Graph(this.$.svg, this);
+	this.scopeSubtree(this.$.svg, true);
+      },
+
+      signOut: function() {
+        this.fire('sign-out');
+      }
+    
+    
+    
+    });
+  </script>
+</dom-module>

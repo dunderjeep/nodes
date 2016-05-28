@@ -1,5 +1,0 @@
-<dom-module id="node-data">
-  <template>
-    <firebase-collection location=""></firebase-collection>
-  </template>
-</dom-module>
