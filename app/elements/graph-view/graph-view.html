@@ -100,13 +100,15 @@
         target: ''
       };	
       
-      function click() {
-        var node = d3.select(this).attr("__firebaseKey__", function(d) {
+    function click() {
+         
+    var node = d3.select(this).attr("__firebaseKey__", function(d) {
+          console.log(d.__firebaseKey__);
           if (first === 0){
-            newLink.source = {"__firebaseKey__": d.__firebaseKey__};
+            newLink.source = d.__firebaseKey__;
             first++;
           } else {
-            newLink.target =  {"__firebaseKey__": d.__firebaseKey__};
+            newLink.target = d.__firebaseKey__;
 	    graphView.push("links", newLink);
             first--;
     	    newLink  = {
