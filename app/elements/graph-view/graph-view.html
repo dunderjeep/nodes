@@ -38,7 +38,9 @@
       <h1>Nodes</h1>
       <div id="svg"></div>
       <iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
-      <paper-slider value="{{linkDistance}}"></paper-slider>{{linkDistance}}
+      <paper-slider value="{{linkDistance}}"></paper-slider>linkDistance: {{linkDistance}}
+      <paper-slider min="-300" max="0" value="{{charge}}"></paper-slider>charge: {{charge}}
+      <paper-slider min="0" max="1" step="0.1" value="{{gravity}}"></paper-slider>gravity: {{gravity}}
     </div>
   </template>
   
@@ -51,7 +53,8 @@
    
       var force = d3.layout.force()
                     .charge(-200) 
-                    .linkDistance(linkDistance)
+                    .linkDistance(20)
+		    .gravity(.1)
                     .size([width, height])
                     .on("tick", tick);
 
@@ -68,6 +71,8 @@
       var update = function(){
       
         force.linkDistance(graphView.linkDistance);
+	force.charge(graphView.charge);
+	force.gravity(graphView.gravity);
 
         nodes = graphView.nodes || [];
         links = graphView.links || [];
@@ -174,10 +179,17 @@
         },
         links: {
           type: Array
-        }
+        },
+	charge: {
+	  notify: true
+	},
       },
     
-      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)', '_linkDistanceChanged(linkDistance)'],
+      observers: [	'_fBChanged(links.splices)',
+      		 	'_fBChanged(nodes.*)',
+      		 	'_linkDistanceChanged(linkDistance)',
+      		 	'_chargeChanged(charge)',
+			'_gravityChanged(gravity)'],
     
       _fBChanged: function(e) {
          this.graph.update();
@@ -185,6 +197,14 @@
 
       _linkDistanceChanged: function(e) {
 	if(this.graph) this.graph.update();
+      },
+
+      _chargeChanged: function(e) {
+        if(this.graph) this.graph.update();
+      },
+
+      _gravityChanged: function(e) {
+        if(this.graph) this.graph.update();
       },
      
       ready: function() {    
