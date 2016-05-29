@@ -38,6 +38,7 @@
       <h1>Nodes</h1>
       <div id="svg"></div>
       <iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
+      <paper-slider value="{{linkDistance}}"></paper-slider>{{linkDistance}}
     </div>
   </template>
   
@@ -45,11 +46,12 @@
     function Graph(el, graphView) {
 
       var width = 500,
-          height = 500;
+          height = 500,
+	  linkDistance = graphView.linkDistance;
    
       var force = d3.layout.force()
                     .charge(-200) 
-                    .linkDistance(20)
+                    .linkDistance(linkDistance)
                     .size([width, height])
                     .on("tick", tick);
 
@@ -64,6 +66,8 @@
       var node = svg.selectAll(".node");
 
       var update = function(){
+      
+        force.linkDistance(graphView.linkDistance);
 
         nodes = graphView.nodes || [];
         links = graphView.links || [];
@@ -173,10 +177,14 @@
         }
       },
     
-      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
+      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)', '_linkDistanceChanged(linkDistance)'],
     
-        _fBChanged: function(e) {
+      _fBChanged: function(e) {
          this.graph.update();
+      },
+
+      _linkDistanceChanged: function(e) {
+	if(this.graph) this.graph.update();
       },
      
       ready: function() {    
