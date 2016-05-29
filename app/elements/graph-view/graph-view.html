@@ -21,10 +21,17 @@
         fill: black;
       }
       
-      .mouseenter {
-        fill: red;
+      .node-mouseenter {
+        fill: green;
 	r: 10;
       }
+
+      .link-mouseenter {
+        stroke: red;
+	stroke-width: 2.5px;
+      }
+
+      .link-mouseout
     </style>
     
     <div class="flex">
@@ -41,8 +48,8 @@
           height = 500;
    
       var force = d3.layout.force()
-                    .charge(-120) 
-                    .linkDistance(30)
+                    .charge(-200) 
+                    .linkDistance(20)
                     .size([width, height])
                     .on("tick", tick);
 
@@ -63,16 +70,20 @@
 
         force.links(links);    
         link = link.data(force.links());
-        link.enter().insert("line", ".node").attr("class", "link");
+        link.enter().insert("line", ".node")
+	    .attr("class", "link")
+	    .on("mouseenter", linkMouseenter)
+	    .on("mouseout", linkMouseout)
+	    .on("click", linkClick)
         link.exit().remove(); 
 
         force.nodes(nodes);
         node = node.data(force.nodes());    
         node.enter().append("circle")
             .attr("class", "node")
-	    .on("mouseenter", mouseenter)
-	    .on("mouseout", mouseout)
-	    .on("click", click)
+	    .on("mouseenter", nodeMouseenter)
+	    .on("mouseout", nodeMouseout)
+	    .on("click", nodeClick)
             .call(force.drag);  
 	    
         node.exit().remove();  
@@ -80,38 +91,51 @@
 	force.start();
       };
 
+      function linkClick(d, i) {
+	graphView.splice("links", i, 1);
+      };
+
+      function linkMouseenter(d) {
+  	d3.select(this).classed("link-mouseenter", true);
+      };
+
+      function linkMouseout() {
+	d3.select(this).classed("link-mouseenter", false);
+      };
+
       function dblclick() {
         var point = d3.mouse(this);
         graphView.push("nodes", { x: point[0], y: point[1]});     
       }
 
-      function mouseenter(d) {
-	d3.select(this).classed("mouseenter", true);
+      function nodeMouseenter(d) {
+	d3.select(this).classed("node-mouseenter", true);
       };
 
-      function mouseout(d) {
-	d3.select(this).classed("mouseenter", false);
+      function nodeMouseout(d) {
+	d3.select(this).classed("node-mouseenter", false);
       };
 
-      var first = 0;
+      var source = true;
     
       var newLink  = {
         source: '',
         target: ''
       };	
       
-    function click() {
-         
-    var node = d3.select(this).attr("__firebaseKey__", function(d) {
-          console.log(d.__firebaseKey__);
-          if (first === 0){
-            newLink.source = d.__firebaseKey__;
-            first++;
+    function nodeClick() {
+
+      if (d3.event.defaultPrevented) return;
+   
+      var node = d3.select(this).attr("__firebaseKey__", function(d) {
+          if (source){
+            newLink.source = {__firebaseKey__: d.__firebaseKey__};
+            source = !source;
           } else {
-            newLink.target = d.__firebaseKey__;
+            newLink.target = {__firebaseKey__: d.__firebaseKey__};
 	    graphView.push("links", newLink);
-            first--;
-    	    newLink  = {
+            source = !source;
+    	    newLink = {
 			source: '',
         	       	target: ''
       		     }; 
