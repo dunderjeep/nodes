@@ -12,12 +12,12 @@
 			 stroke: #000;
 			 stroke-width: 1.5px;
 			}
-			.node {
+			.node circle{
 			 r: 5;
 			 cursor: move;
 			 fill: black;
 			}
-			.node-mouseenter {
+			.node-mouseenter circle{
 			 fill: green;
 			 r: 10;
 			}
@@ -25,7 +25,7 @@
 			 stroke: red;
 			 stroke-width: 2.5px;
 			}
-			.link-mouseout
+
 		</style>
 		<div class="flex">
 			<h1>Nodes</h1>
@@ -53,10 +53,11 @@
 		  d3.select(window)
 		    .on('resize', resize);
 		
-		  var force = d3.layout.force()
+		  var force = d3.layout
+                        .force()
 		                .charge(-200) 
 		                .linkDistance(20)
-		  .gravity(.1)
+                        .gravity(.1)
 		                .size([width, height])
 		                .on("tick", tick);
 		
@@ -90,13 +91,14 @@
 		
 		      force.nodes(nodes);
 		      node = node.data(force.nodes());    
-		      node.enter().append("circle")
+		      node.enter().append("g")
 		          .attr("class", "node")
 		          .on("mouseenter", nodeMouseenter)
                   .on("mouseout", nodeMouseout)
 		          .on("click", nodeClick)
 		          .on("mousedown", nodeMousedown)
-                  .call(force.drag);  
+                  .call(force.drag)  
+                    .append("circle");    
 		 
 		      node.exit().remove();  
 		
@@ -135,11 +137,6 @@
 		
 		  function nodeMousedown(d){
 		    var selected = d3.select(this);
-            d3.timer(timer);
-		  };
-		
-		  function timer(_elapsed) {
-		 
 		  };
 		
 		  var source = true;
@@ -177,8 +174,7 @@
 		        .attr("x2", function(d){ return d.target.x; })
 		        .attr("y2", function(d){ return d.target.y; });
 		 
-		    node.attr("cx", function(d) { return d.x; })
-		        .attr("cy", function(d) { return d.y; });
+              node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 		  }
 		
 		  return {
