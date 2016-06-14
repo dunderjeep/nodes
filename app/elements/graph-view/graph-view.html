@@ -9,8 +9,8 @@
 			 backround-color: blue;
 			}
 			.link {
-			 stroke: #000;
-			 stroke-width: 1.5px;
+			 stroke: #808080;
+			 stroke-width: 1px;
 			}
 			.node circle{
 			 r: 5;
@@ -70,7 +70,7 @@
 		
 		  var link = svg.selectAll(".link");
 		  var node = svg.selectAll(".node");
-		
+            
 		  var update = function(){
 		  
 		      force.linkDistance(graphView.linkDistance);
@@ -90,20 +90,28 @@
 		      link.exit().remove(); 
 		
 		      force.nodes(nodes);
-		      node = node.data(force.nodes());    
-		      node.enter().append("g")
-		          .attr("class", "node")
-		          .on("mouseenter", nodeMouseenter)
-                  .on("mouseout", nodeMouseout)
-		          .on("click", nodeClick)
-		          .on("mousedown", nodeMousedown)
-                  .call(force.drag)  
-                    .append("circle");    
+		      node = node.data(force.nodes());
+              
+		      var g = node.enter().append("g")
+		                  .attr("class", "node")
+		                  .on("mouseenter", nodeMouseenter)
+                          .on("mouseout", nodeMouseout)
+		                  .on("click", nodeClick)
+		                  .on("mousedown", nodeMousedown)
+                          .call(force.drag);
+                  
+              g.append("circle");
+              
+              g.append("text")
+               .attr("dx", 12)
+               .attr("dy", ".35em")
+               .text(function(d, i) { return i; });
+              
 		 
 		      node.exit().remove();  
 		
 		      force.start();
-		  };
+		  };            
 		
 		  function resize() {
 		    svg.attr("width", graphView.clientWidth * .9)
