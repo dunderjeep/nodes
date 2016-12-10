@@ -12,7 +12,7 @@
 			 stroke: #808080;
 			 stroke-width: 1px;
 			}
-			.node circle{
+			.node circle {
 			 r: 5;
 			 cursor: move;
 			 fill: black;
@@ -25,6 +25,10 @@
 			 stroke: red;
 			 stroke-width: 2.5px;
 			}
+            
+            .cell {
+              pointer-events: all;
+            }
 
 		</style>
 		<div class="flex">
@@ -37,18 +41,22 @@
 			charge: {{charge}}
 			<paper-slider min="0" max="1" step="0.1" value="{{gravity}}"></paper-slider>
 			gravity: {{gravity}}
-			<a href="https://bl.ocks.org/mbostock/6123708">Drag and Zoom</a>
-			<a href="http://bl.ocks.org/eyaler/10586116">Drag/Zoom/Pan/Center/Resize/Lables/Shapes/Fileter/Highlight</a>
-			<a href="https://vimeo.com/29458354">Mike Bostock Videos</a>
-			<a href="http://mbostock.github.io/d3/talk/20110921/#0">Mike Bostock Slides</a>
-			<a href="http://bl.ocks.org/cloudshapes/5662234">D3 timer</a>
+            <a href="https://github.com/d3/d3/releases/tag/v4.0.0?utm_source=javascriptweekly&utm_medium=email">Update d3 to v4.0</a>
+            <!--
+                <a href="https://bl.ocks.org/mbostock/6123708">Drag and Zoom</a>
+                <a href="http://bl.ocks.org/eyaler/10586116">Drag/Zoom/Pan/Center/Resize/Lables/Shapes/Fileter/Highlight</a>
+                <a href="https://vimeo.com/29458354">Mike Bostock Videos</a>
+                <a href="http://mbostock.github.io/d3/talk/20110921/#0">Mike Bostock Slides</a>
+                <a href="http://bl.ocks.org/cloudshapes/5662234">D3 timer</a>
+                <a href="https://bl.ocks.org/mbostock/8033015">Multi-line voronoi</a>
+                <a href="http://bl.ocks.org/mbostock/1212215">Force Layout with Voronoi labels</a>
+            -->
 		</div>
 	</template>
 	<script>
 		function Graph(el, graphView) {
 		
-		  var width = 500,
-		      height = 500;
+		  var width = 500, height = 500;
 		
 		  d3.select(window)
 		    .on('resize', resize);
@@ -60,6 +68,11 @@
                         .gravity(.1)
 		                .size([width, height])
 		                .on("tick", tick);
+            
+          var voronoi = d3.geom.voronoi()
+                          .x(function(d) { return d.x; })
+                          .y(function(d) { return d.y; })
+                          .clipExtent([[0, 0], [width, height]]);
 		
 		  var svg = d3.select(el)
 		              .append("svg")
@@ -70,6 +83,8 @@
 		
 		  var link = svg.selectAll(".link");
 		  var node = svg.selectAll(".node");
+          var cell;// = svg.selectAll("path"); 
+          var nodes;
             
 		  var update = function(){
 		  
@@ -90,6 +105,7 @@
 		      link.exit().remove(); 
 		
 		      force.nodes(nodes);
+              
 		      node = node.data(force.nodes());
               
 		      var g = node.enter().append("g")
@@ -102,12 +118,14 @@
                   
               g.append("circle");
               
-              g.append("text")
-               .attr("dx", 12)
-               .attr("dy", ".35em")
-               .text(function(d, i) { return i; });
+              var label = g.append("text")
+                           .attr("dx", 12)
+                           .attr("dy", ".35em")
+                           .text(function(d, i) { return i; });
               
-		 
+              cell = g.append("path")
+                      .attr("class", "cell"); 
+              
 		      node.exit().remove();  
 		
 		      force.start();
@@ -176,13 +194,15 @@
 		  };    
 		
 		  function tick() {
+              
+    //        cell.data(voronoi(graphView.nodes)).attr("d", function(d) { console.log("d", d.length); return d.length ? "M" + d.join("L") : null; });
 		
 		    link.attr("x1", function(d){ return d.source.x; })
 		        .attr("y1", function(d){ return d.source.y; })
 		        .attr("x2", function(d){ return d.target.x; })
 		        .attr("y2", function(d){ return d.target.y; });
 		 
-              node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+            node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 		  }
 		
 		  return {
