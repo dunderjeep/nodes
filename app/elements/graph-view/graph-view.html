@@ -1,273 +1,157 @@
 <dom-module id="graph-view">
+
 	<template>
+
 		<style>
+
 			.flex {
-			 display: flex;
-			 flex-direction: column;
-			 align-items: center;
-			 justify-content: center;
-			 backround-color: blue;
+			 	display: flex;
+			 	flex-direction: column;
+			 	align-items: center;
+			 	justify-content: center;
 			}
+
 			.link {
-			 stroke: #808080;
-			 stroke-width: 1px;
+				stroke: #808080;
+			 	stroke-width: 1px;
 			}
+
 			.node circle {
-			 r: 5;
-			 cursor: move;
-			 fill: black;
+				r: 5;
+				cursor: move;
+				fill: black;
 			}
-			.node-mouseenter circle{
-			 fill: green;
-			 r: 10;
+
+			.svg {
+				outline: thin solid black;
 			}
-			.link-mouseenter {
-			 stroke: red;
-			 stroke-width: 2.5px;
-			}
-            
-            .cell {
-              pointer-events: all;
-            }
+
+			.cell {
+      	pointer-events: all;
+      }
 
 		</style>
+
 		<div class="flex">
-			<h1>Nodes</h1>
+			<h2>Nodes</h2>
 			<div id="svg"></div>
 			<iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
-			<paper-slider value="{{linkDistance}}"></paper-slider>
-			linkDistance: {{linkDistance}}
-			<paper-slider min="-300" max="0" value="{{charge}}"></paper-slider>
-			charge: {{charge}}
-			<paper-slider min="0" max="1" step="0.1" value="{{gravity}}"></paper-slider>
-			gravity: {{gravity}}
-            <a href="https://github.com/d3/d3/releases/tag/v4.0.0?utm_source=javascriptweekly&utm_medium=email">Update d3 to v4.0</a>
-            <!--
-                <a href="https://bl.ocks.org/mbostock/6123708">Drag and Zoom</a>
-                <a href="http://bl.ocks.org/eyaler/10586116">Drag/Zoom/Pan/Center/Resize/Lables/Shapes/Fileter/Highlight</a>
-                <a href="https://vimeo.com/29458354">Mike Bostock Videos</a>
-                <a href="http://mbostock.github.io/d3/talk/20110921/#0">Mike Bostock Slides</a>
-                <a href="http://bl.ocks.org/cloudshapes/5662234">D3 timer</a>
-                <a href="https://bl.ocks.org/mbostock/8033015">Multi-line voronoi</a>
-                <a href="http://bl.ocks.org/mbostock/1212215">Force Layout with Voronoi labels</a>
-            -->
 		</div>
+
 	</template>
+
 	<script>
+
 		function Graph(el, graphView) {
-		
+
 		  var width = 500, height = 500;
-		
+
 		  d3.select(window)
 		    .on('resize', resize);
-		
-		  var force = d3.layout
-                        .force()
-		                .charge(-200) 
-		                .linkDistance(20)
-                        .gravity(.1)
-		                .size([width, height])
-		                .on("tick", tick);
-            
-          var voronoi = d3.geom.voronoi()
-                          .x(function(d) { return d.x; })
-                          .y(function(d) { return d.y; })
-                          .clipExtent([[0, 0], [width, height]]);
-		
-		  var svg = d3.select(el)
-		              .append("svg")
-		              .attr("width", graphView.clientWidth * .9)
-		              .attr("height", graphView.clientHeight)
-		              .attr("style", "outline: thin solid red;")
-		              .on("dblclick", dblclick);
-		
-		  var link = svg.selectAll(".link");
-		  var node = svg.selectAll(".node");
-          var cell;// = svg.selectAll("path"); 
-          var nodes;
-            
-		  var update = function(){
-		  
-		      force.linkDistance(graphView.linkDistance);
-		      force.charge(graphView.charge);
-		      force.gravity(graphView.gravity);
-		
-		      nodes = graphView.nodes || [];
-		      links = graphView.links || [];
-		
-		      force.links(links);    
-		      link = link.data(force.links());
-		      link.enter().insert("line", ".node")
-		          .attr("class", "link")
-		          .on("mouseenter", linkMouseenter)
-		          .on("mouseout", linkMouseout)
-		          .on("click", linkClick)
-		      link.exit().remove(); 
-		
-		      force.nodes(nodes);
-              
-		      node = node.data(force.nodes());
-              
-		      var g = node.enter().append("g")
-		                  .attr("class", "node")
-		                  .on("mouseenter", nodeMouseenter)
-                          .on("mouseout", nodeMouseout)
-		                  .on("click", nodeClick)
-		                  .on("mousedown", nodeMousedown)
-                          .call(force.drag);
-                  
-              g.append("circle");
-              
-              var label = g.append("text")
-                           .attr("dx", 12)
-                           .attr("dy", ".35em")
-                           .text(function(d, i) { return i; });
-              
-              cell = g.append("path")
-                      .attr("class", "cell"); 
-              
-		      node.exit().remove();  
-		
-		      force.start();
-		  };            
-		
+
+			var svg = d3.select(el)
+			              .append("svg")
+			              .attr("width", graphView.clientWidth * .9)
+			              .attr("height", graphView.clientHeight)
+			              .attr("class", "svg")
+			              .on("dblclick", dblclick);
+
+			var width = +svg.attr("width"), height = +svg.attr("height");
+
+			var simulation = d3.forceSimulation(graphView.nodes)
+						.force("link", d3.forceLink(graphView.links))
+						.force("charge", d3.forceManyBody())
+						.force("center", d3.forceCenter(width / 2, height / 2))
+						.on("tick", tick);
+
+			var nodes = svg.selectAll("g");
+			var node = svg.selectAll(".circle");
+
+			var update = function(){
+
+				nodes = svg.selectAll("g")
+					.data(graphView.nodes, function(d) { return d.__firebaseKey__; }).call(d3.drag()
+						.on("start", dragstarted)
+						.on("drag", dragged)
+						.on("end", dragended));
+				nodes = nodes.enter().append("g").attr("class", "node");
+				nodes.append("circle").attr("class", "circle");
+				nodes.append("text").text(function(d) { return d.__firebaseKey__; }).attr("class", "text");
+
+				node = svg.selectAll("circle");
+
+				nodes.exit().remove();
+
+				simulation.nodes(graphView.nodes);
+			};
+
 		  function resize() {
 		    svg.attr("width", graphView.clientWidth * .9)
 		       .attr("height", graphView.clientHeight);
 		  };
-		
-		  function linkClick(d, i) {
-            graphView.splice("links", i, 1);
-		  };
-		
-		  function linkMouseenter(d) {
-            d3.select(this).classed("link-mouseenter", true);
-		  };
-		
-		  function linkMouseout() {
-            d3.select(this).classed("link-mouseenter", false);
-		  };
-		
+
 		  function dblclick() {
 		    var point = d3.mouse(this);
-		    graphView.push("nodes", { x: point[0], y: point[1]});     
-		  }
-		
-		  function nodeMouseenter(d) {
-            d3.select(this).classed("node-mouseenter", true);
-		  };
-		
-		  function nodeMouseout(d) {
-            d3.select(this).classed("node-mouseenter", false);
-		  };
-		
-		  function nodeMousedown(d){
-		    var selected = d3.select(this);
-		  };
-		
-		  var source = true;
-		
-		  var newLink  = {
-		    source: '',
-		    target: ''
-		  };	
-		  
-		function nodeClick() {
-		
-		  if (d3.event.defaultPrevented) return;
-		
-		  var node = d3.select(this).attr("__firebaseKey__", function(d) {
-            if (source){
-                newLink.source = {__firebaseKey__: d.__firebaseKey__};
-		        source = !source;
-            } else {
-		        newLink.target = {__firebaseKey__: d.__firebaseKey__};
-                graphView.push("links", newLink);
-		        source = !source;
-			    newLink = {
-                    source: '',
-                    target: ''
-                 }; 
-		      }
-		       
-		    });
-		  };    
-		
-		  function tick() {
-              
-    //        cell.data(voronoi(graphView.nodes)).attr("d", function(d) { console.log("d", d.length); return d.length ? "M" + d.join("L") : null; });
-		
-		    link.attr("x1", function(d){ return d.source.x; })
-		        .attr("y1", function(d){ return d.source.y; })
-		        .attr("x2", function(d){ return d.target.x; })
-		        .attr("y2", function(d){ return d.target.y; });
-		 
-            node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-		  }
-		
-		  return {
-		    svg: svg,
-		    update: update
-		  }
-		
+		    graphView.push("nodes", { x: point[0], y: point[1]});
+				console.log(point, graphView.nodes);
+			}
+
+			function dragstarted(d) {
+				if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+				d.fx = d.x;
+				d.fy = d.y;
+			}
+
+			function dragged(d) {
+				d.fx = d3.event.x;
+				d.fy = d3.event.y;
+			}
+
+			function dragended(d) {
+				if (!d3.event.active) simulation.alphaTarget(0);
+				d.fx = null;
+				d.fy = null;
+			}
+
+			function tick() {
+	      	nodes
+						.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")" });
+			}
+
+			return {
+			    svg: svg,
+			    update: update
+			}
+
 		};
-		
+
 		Polymer({
 		  is: 'graph-view',
-		  properties: {  
+		  properties: {
 		    nodes: {
 		      type: Array
 		    },
 		    links: {
 		      type: Array
-		    },
-            linkDistance: {
-		      type: Number,
-		      notify: true,
-		      value: 20,
-		      observer: '_linkDistanceChanged'
-            },
-		      charge: {
-		      type: Number,
-		      notify: true,
-		      value: -180,
-		      observer: '_chargeChanged'
-            },
-              gravity: {
-		      type: Number,
-		      notify: true,
-		      value: 0.1,
-		      observer: '_gravityChanged'
-            }
+		    }
 		  },
-		
+
 		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
-		
+
 		  _fBChanged: function(e) {
-            this.graph.update();
+      	this.graph.update();
 		  },
-		
-		  _linkDistanceChanged: function(e) {
-            if(this.graph) this.graph.update();
-		  },
-		
-		  _chargeChanged: function() {
-		    if(this.graph) this.graph.update();
-		  },
-		
-		  _gravityChanged: function(e) {
-		    if(this.graph) this.graph.update();
-		  },
-		 
-		  attached: function() {    
+
+		  attached: function() {
 		    this.graph = Graph(this.$.svg, this);
-            this.scopeSubtree(this.$.svg, true);
+        this.scopeSubtree(this.$.svg, true);
 		  },
-		
+
 		  signOut: function() {
 		    this.fire('sign-out');
-		  }   
-		
+		  }
+
 		});
+
 	</script>
 </dom-module>
