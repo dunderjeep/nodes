@@ -11,19 +11,15 @@
 			 	justify-content: center;
 			}
 
-			.link {
+			line {
 				stroke: #808080;
 			 	stroke-width: 1px;
 			}
 
 			.node circle {
-				r: 5;
+				r: 3;
 				cursor: move;
 				fill: black;
-			}
-
-			.svg {
-				outline: thin solid black;
 			}
 
 			.cell {
@@ -33,7 +29,6 @@
 		</style>
 
 		<div class="flex">
-			<h2>Nodes</h2>
 			<div id="svg"></div>
 			<iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
 		</div>
@@ -44,56 +39,66 @@
 
 		function Graph(el, graphView) {
 
-		  var width = 500, height = 500;
-
 		  d3.select(window)
 		    .on('resize', resize);
 
 			var svg = d3.select(el)
-			              .append("svg")
-			              .attr("width", graphView.clientWidth * .9)
-			              .attr("height", graphView.clientHeight)
-			              .attr("class", "svg")
-			              .on("dblclick", dblclick);
+        .append("svg")
+        .attr("width", graphView.clientWidth)
+        .attr("height", graphView.clientHeight)
+        .attr("class", "svg")
+        .on("dblclick", dblclick);
 
 			var width = +svg.attr("width"), height = +svg.attr("height");
 
 			var simulation = d3.forceSimulation(graphView.nodes)
-						.force("link", d3.forceLink(graphView.links))
-						.force("charge", d3.forceManyBody())
-						.force("center", d3.forceCenter(width / 2, height / 2))
-						.on("tick", tick);
+				.force("link", d3.forceLink().id(function(d) {return d.__firebaseKey__;}))
+				.force("charge", d3.forceManyBody())
+				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
+				.on("tick", ticked);
 
-			var nodes = svg.selectAll("g");
-			var node = svg.selectAll(".circle");
+			var nodes= svg.append("g").attr("class", "nodes"),
+			links = svg.append("g").attr("class", "links"),
+			link = links.selectAll(".link");
 
-			var update = function(){
+  		var update = function(){
 
-				nodes = svg.selectAll("g")
-					.data(graphView.nodes, function(d) { return d.__firebaseKey__; }).call(d3.drag()
-						.on("start", dragstarted)
-						.on("drag", dragged)
-						.on("end", dragended));
-				nodes = nodes.enter().append("g").attr("class", "node");
-				nodes.append("circle").attr("class", "circle");
-				nodes.append("text").text(function(d) { return d.__firebaseKey__; }).attr("class", "text");
+				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
+				var nodeEnter = node.enter()
+					.append("g")
+					.attr("class", "node");
+				nodeEnter.append("circle");
+				nodeEnter.append("text")
+					.text(function(d) { return d.__firebaseKey__; })
+					.style("display", "none");
+				node.merge(nodeEnter);
 
-				node = svg.selectAll("circle");
+				node.call(d3.drag()
+										.on("start", dragstarted)
+										.on("drag", dragged)
+										.on("end", dragended));
 
-				nodes.exit().remove();
+				node.exit().remove();
+
+				link = links.selectAll(".link").data(graphView.links);
+				link.enter().append("line")
+					.attr("class", "link")
+					.merge(link);
+				link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
+				simulation.force("link").links(graphView.links);
+				simulation.restart();
 			};
 
 		  function resize() {
-		    svg.attr("width", graphView.clientWidth * .9)
+		    svg.attr("width", graphView.clientWidth)
 		       .attr("height", graphView.clientHeight);
 		  };
 
 		  function dblclick() {
 		    var point = d3.mouse(this);
 		    graphView.push("nodes", { x: point[0], y: point[1]});
-				console.log(point, graphView.nodes);
 			}
 
 			function dragstarted(d) {
@@ -103,8 +108,8 @@
 			}
 
 			function dragged(d) {
-				d.fx = d3.event.x;
-				d.fy = d3.event.y;
+				 d.fx = d3.event.x;
+				 d.fy = d3.event.y;
 			}
 
 			function dragended(d) {
@@ -113,9 +118,16 @@
 				d.fy = null;
 			}
 
-			function tick() {
-	      	nodes
-						.attr("transform", function(d) {return "translate(" + d.x + "," + d.y + ")" });
+			function ticked() {
+
+				links.selectAll(".link")
+				  .attr("x1",function(d) { return d.source.x; } )
+				  .attr("y1", function(d) { return d.source.y; })
+				  .attr("x2", function(d) { return d.target.x; })
+				  .attr("y2", function(d) { return d.target.y; });
+
+				node
+				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 			}
 
 			return {
