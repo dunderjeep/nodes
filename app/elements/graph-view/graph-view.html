@@ -1,257 +1,169 @@
 <dom-module id="graph-view">
 
-  <template>
-    
-    <style>
-      .flex {
-	display: flex;
-        flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	backround-color: blue;
+	<template>
+
+		<style>
+
+			.flex {
+			 	display: flex;
+			 	flex-direction: column;
+			 	align-items: center;
+			 	justify-content: center;
+			}
+
+			line {
+				stroke: #808080;
+			 	stroke-width: 1px;
+			}
+
+			.node circle {
+				r: 3;
+				cursor: move;
+				fill: black;
+			}
+
+			.cell {
+      	pointer-events: all;
       }
 
-      .link {
-        stroke: #000;
-        stroke-width: 1.5px;
-      }
+		</style>
 
-      .node {
-      	r: 5;
-        cursor: move;
-        fill: black;
-      }
-      
-      .node-mouseenter {
-        fill: green;
-	r: 10;
-      }
+		<div class="flex">
+			<div id="svg"></div>
+			<iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
+		</div>
 
-      .link-mouseenter {
-        stroke: red;
-	stroke-width: 2.5px;
-      }
+	</template>
 
-      .link-mouseout
-    </style>
-    
-    <div class="flex">
-      <h1>Nodes</h1>
-      <div id="svg"></div>
-      <iron-icon icon="account-circle" on-tap="signOut"></iron-icon>
-      <paper-slider value="{{linkDistance}}"></paper-slider>linkDistance: {{linkDistance}}
-      <paper-slider min="-300" max="0" value="{{charge}}"></paper-slider>charge: {{charge}}
-      <paper-slider min="0" max="1" step="0.1" value="{{gravity}}"></paper-slider>gravity: {{gravity}}
-      <a href="https://bl.ocks.org/mbostock/6123708">Drag and Zoom</a>
-      <a href="http://bl.ocks.org/eyaler/10586116">Drag/Zoom/Pan/Center/Resize/Lables/Shapes/Fileter/Highlight</a>
+	<script>
 
-      <a href="https://vimeo.com/29458354">Mike Bostock Videos</a>
-      <a href="http://mbostock.github.io/d3/talk/20110921/#0">Mike Bostock Slides</a>
-      <a href="http://bl.ocks.org/cloudshapes/5662234">D3 timer</a>
-      
-    </div>
-  </template>
-  
-  <script>
-    function Graph(el, graphView) {
+		function Graph(el, graphView) {
 
-      var width = 500,
-          height = 500;
+		  d3.select(window)
+		    .on('resize', resize);
 
-      d3.select(window)
-        .on('resize', resize);
-   
-      var force = d3.layout.force()
-                    .charge(-200) 
-                    .linkDistance(20)
-		    .gravity(.1)
-                    .size([width, height])
-                    .on("tick", tick);
+			var svg = d3.select(el)
+        .append("svg")
+        .attr("width", graphView.clientWidth)
+        .attr("height", graphView.clientHeight)
+        .attr("class", "svg")
+        .on("dblclick", dblclick);
 
-      var svg = d3.select(el)
-                  .append("svg")
-                  .attr("width", graphView.clientWidth * .9)
-                  .attr("height", graphView.clientHeight)
-                  .attr("style", "outline: thin solid red;")
-                  .on("dblclick", dblclick);
-    
-      var link = svg.selectAll(".link");
-      var node = svg.selectAll(".node");
+			var width = +svg.attr("width"), height = +svg.attr("height");
 
-      var update = function(){
-      
-        force.linkDistance(graphView.linkDistance);
-	force.charge(graphView.charge);
-	force.gravity(graphView.gravity);
+			var simulation = d3.forceSimulation(graphView.nodes)
+				.force("link", d3.forceLink().id(function(d) {return d.__firebaseKey__;}))
+				.force("charge", d3.forceManyBody())
+				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
+				.on("tick", ticked);
 
-        nodes = graphView.nodes || [];
-        links = graphView.links || [];
+			var nodes= svg.append("g").attr("class", "nodes"),
+			links = svg.append("g").attr("class", "links"),
+			link = links.selectAll(".link");
 
-        force.links(links);    
-        link = link.data(force.links());
-        link.enter().insert("line", ".node")
-	    .attr("class", "link")
-	    .on("mouseenter", linkMouseenter)
-	    .on("mouseout", linkMouseout)
-	    .on("click", linkClick)
-        link.exit().remove(); 
+  		var update = function(){
 
-        force.nodes(nodes);
-        node = node.data(force.nodes());    
-        node.enter().append("circle")
-            .attr("class", "node")
-	    .on("mouseenter", nodeMouseenter)
-	    .on("mouseout", nodeMouseout)
-	    .on("click", nodeClick)
-	    .on("mousedown", nodeMousedown)
-            .call(force.drag);  
-	    
-        node.exit().remove();  
+				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
+				var nodeEnter = node.enter()
+					.append("g")
+					.attr("class", "node");
+				nodeEnter.append("circle");
+				nodeEnter.append("text")
+					.text(function(d) { return d.__firebaseKey__; })
+					.style("display", "none");
+				node.merge(nodeEnter);
 
-	force.start();
-      };
+				node.call(d3.drag()
+										.on("start", dragstarted)
+										.on("drag", dragged)
+										.on("end", dragended));
 
-      function resize() {
-        svg.attr("width", graphView.clientWidth * .9)
-           .attr("height", graphView.clientHeight);
-      };
+				node.exit().remove();
 
-      function linkClick(d, i) {
-	graphView.splice("links", i, 1);
-      };
+				link = links.selectAll(".link").data(graphView.links);
+				link.enter().append("line")
+					.attr("class", "link")
+					.merge(link);
+				link.exit().remove();
 
-      function linkMouseenter(d) {
-  	d3.select(this).classed("link-mouseenter", true);
-      };
+				simulation.nodes(graphView.nodes);
+				simulation.force("link").links(graphView.links);
+				simulation.restart();
+			};
 
-      function linkMouseout() {
-	d3.select(this).classed("link-mouseenter", false);
-      };
+		  function resize() {
+		    svg.attr("width", graphView.clientWidth)
+		       .attr("height", graphView.clientHeight);
+		  };
 
-      function dblclick() {
-        var point = d3.mouse(this);
-        graphView.push("nodes", { x: point[0], y: point[1]});     
-      }
+		  function dblclick() {
+		    var point = d3.mouse(this);
+		    graphView.push("nodes", { x: point[0], y: point[1]});
+			}
 
-      function nodeMouseenter(d) {
-	d3.select(this).classed("node-mouseenter", true);
-      };
+			function dragstarted(d) {
+				if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+				d.fx = d.x;
+				d.fy = d.y;
+			}
 
-      function nodeMouseout(d) {
-	d3.select(this).classed("node-mouseenter", false);
-      };
+			function dragged(d) {
+				 d.fx = d3.event.x;
+				 d.fy = d3.event.y;
+			}
 
-      function nodeMousedown(d){
-        var selected = d3.select(this);
-	d3.timer(timer);
-      };
+			function dragended(d) {
+				if (!d3.event.active) simulation.alphaTarget(0);
+				d.fx = null;
+				d.fy = null;
+			}
 
-      function timer(_elapsed) {
-     
-      };
+			function ticked() {
 
-      var source = true;
-    
-      var newLink  = {
-        source: '',
-        target: ''
-      };	
-      
-    function nodeClick() {
+				links.selectAll(".link")
+				  .attr("x1",function(d) { return d.source.x; } )
+				  .attr("y1", function(d) { return d.source.y; })
+				  .attr("x2", function(d) { return d.target.x; })
+				  .attr("y2", function(d) { return d.target.y; });
 
-      if (d3.event.defaultPrevented) return;
-   
-      var node = d3.select(this).attr("__firebaseKey__", function(d) {
-          if (source){
-            newLink.source = {__firebaseKey__: d.__firebaseKey__};
-            source = !source;
-          } else {
-            newLink.target = {__firebaseKey__: d.__firebaseKey__};
-	    graphView.push("links", newLink);
-            source = !source;
-    	    newLink = {
-			source: '',
-        	       	target: ''
-      		     }; 
-          }
-           
-        });
-      };    
-    
-      function tick() {
-    
-        link.attr("x1", function(d){ return d.source.x; })
-            .attr("y1", function(d){ return d.source.y; })
-            .attr("x2", function(d){ return d.target.x; })
-            .attr("y2", function(d){ return d.target.y; });
-	    
-        node.attr("cx", function(d) { return d.x; })
-            .attr("cy", function(d) { return d.y; });
-      }
-    
-      return {
-        svg: svg,
-        update: update
-      }
-    
-    };
-    
-    Polymer({
-      is: 'graph-view',
-      properties: {  
-        nodes: {
-          type: Array
-        },
-        links: {
-          type: Array
-        },
-	linkDistance: {
-	  type: Number,
-	  notify: true,
-	  value: 20,
-	  observer: '_linkDistanceChanged'
-	},
-	charge: {
-	  type: Number,
-	  notify: true,
-	  value: -180,
-	  observer: '_chargeChanged'
-	},
-	gravity: {
-	  type: Number,
-	  notify: true,
-	  value: 0.1,
-	  observer: '_gravityChanged'
-	}
-      },
-    
-      observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
-    
-      _fBChanged: function(e) {
-         this.graph.update();
-      },
+				node
+				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
+			}
 
-      _linkDistanceChanged: function(e) {
-	if(this.graph) this.graph.update();
-      },
+			return {
+			    svg: svg,
+			    update: update
+			}
 
-      _chargeChanged: function() {
-        if(this.graph) this.graph.update();
-      },
+		};
 
-      _gravityChanged: function(e) {
-        if(this.graph) this.graph.update();
-      },
-     
-      attached: function() {    
-        this.graph = Graph(this.$.svg, this);
-	this.scopeSubtree(this.$.svg, true);
-      },
+		Polymer({
+		  is: 'graph-view',
+		  properties: {
+		    nodes: {
+		      type: Array
+		    },
+		    links: {
+		      type: Array
+		    }
+		  },
 
-      signOut: function() {
-        this.fire('sign-out');
-      }   
-    
-    });
-  </script>
+		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
+
+		  _fBChanged: function(e) {
+      	this.graph.update();
+		  },
+
+		  attached: function() {
+		    this.graph = Graph(this.$.svg, this);
+        this.scopeSubtree(this.$.svg, true);
+		  },
+
+		  signOut: function() {
+		    this.fire('sign-out');
+		  }
+
+		});
+
+	</script>
 </dom-module>
