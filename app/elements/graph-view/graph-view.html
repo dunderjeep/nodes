@@ -11,8 +11,12 @@
 			 	justify-content: center;
 			}
 
+			#svg {
+				margin: 10px;
+			}
+
 			line {
-				stroke: #808080;
+				stroke: #999;
 			 	stroke-width: 1px;
 			}
 
@@ -22,9 +26,18 @@
 				fill: black;
 			}
 
-			.cell {
+			.node {
       	pointer-events: all;
       }
+
+			.polygons {
+				fill: none;
+				stroke: #999;
+			}
+
+			text {
+				display: none;
+			}
 
 		</style>
 
@@ -38,7 +51,7 @@
 	<script>
 
 		function Graph(el, graphView) {
-
+			// http://blockbuilder.org/alexmacy/15962e97f7a9ebacd55710bf277593d4
 		  d3.select(window)
 		    .on('resize', resize);
 
@@ -49,7 +62,7 @@
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = +svg.attr("width"), height = +svg.attr("height");
+			var width = graphView.clientWidth, height = graphView.clientHeight;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) {return d.__firebaseKey__;}))
@@ -57,11 +70,29 @@
 				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
 				.on("tick", ticked);
 
-			var nodes= svg.append("g").attr("class", "nodes"),
+			var nodes = svg.append("g").attr("class", "nodes"),
+			node = nodes.selectAll("g"),
 			links = svg.append("g").attr("class", "links"),
-			link = links.selectAll(".link");
+			link = links.selectAll(".link"),
+			polygons = svg.append("g").attr("class", "polygons");
+
+			var voronoi = d3.voronoi()
+				.x(function(d) { return d.x; })
+				.y(function(d) { return d.y; })
+				.extent([[0, 0], [width, height]]);
+
+			var diagram = {};
 
   		var update = function(){
+
+				polygons.selectAll("polygon")
+					.data(graphView.nodes)
+					.enter().append("polygon")
+					.on("mouseover", mouseover)
+					.call(d3.drag()
+						.on("start", dragstarted)
+						.on("drag", dragged)
+						.on("end", dragended));
 
 				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
 				var nodeEnter = node.enter()
@@ -78,16 +109,16 @@
 										.on("drag", dragged)
 										.on("end", dragended));
 
-				node.exit().remove();
-
 				link = links.selectAll(".link").data(graphView.links);
-				link.enter().append("line")
-					.attr("class", "link")
-					.merge(link);
-				link.exit().remove();
+				if (link.enter) {
+					link.enter().append("line")
+						.attr("class", "link")
+						.merge(link);
+				}
+				if (link.exit) link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
-				simulation.force("link").links(graphView.links);
+				if (link.enter) simulation.force("link").links(graphView.links);
 				simulation.restart();
 			};
 
@@ -101,24 +132,37 @@
 		    graphView.push("nodes", { x: point[0], y: point[1]});
 			}
 
+			function mouseover(d) {
+				var foo = d3.select(this).nodes();
+			}
+
 			function dragstarted(d) {
+				//d3.select(this).raise().classed("active", true);
 				if (!d3.event.active) simulation.alphaTarget(0.3).restart();
 				d.fx = d.x;
 				d.fy = d.y;
 			}
 
 			function dragged(d) {
-				 d.fx = d3.event.x;
-				 d.fy = d3.event.y;
+				//var what = d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
+				d.fx = d3.event.x;
+				d.fy = d3.event.y;
+
 			}
 
 			function dragended(d) {
+				//d3.select(this).classed("active", false);
 				if (!d3.event.active) simulation.alphaTarget(0);
 				d.fx = null;
 				d.fy = null;
 			}
 
 			function ticked() {
+
+				var diagram = voronoi.polygons(node.data());
+
+				polygons.selectAll("polygon")
+					.attr("points", function(d, i) { return diagram[i]; });
 
 				links.selectAll(".link")
 				  .attr("x1",function(d) { return d.source.x; } )
