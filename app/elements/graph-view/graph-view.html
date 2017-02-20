@@ -60,27 +60,28 @@
 			// http://blockbuilder.org/alexmacy/15962e97f7a9ebacd55710bf277593d4
 
 			// link nodes by name https://bl.ocks.org/mbostock/533daf20348023dfdd76
+			// modifying a force layout https://bl.ocks.org/mbostock/1095795
 
-		  d3.select(window)
-		    .on('resize', resize);
+		  // d3.select(window)
+		  //   .on('resize', resize);
 
 			var svg = d3.select(el)
         .append("svg")
-        .attr("width", graphView.clientWidth)
-        .attr("height", graphView.clientHeight)
+        .attr("width", 500)
+        .attr("height", 500)
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = graphView.clientWidth, height = graphView.clientHeight;
+			var width = 500, height = 500;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
 				.force("charge", d3.forceManyBody().strength(0))
-				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
+				.force("center", d3.forceCenter(width / 2, height / 2))
 				.on("tick", ticked);
 
 			var nodes = svg.append("g").attr("class", "nodes"),
-			node = nodes.selectAll("g"),
+			node = nodes.selectAll(".node"),
 			links = svg.append("g").attr("class", "links"),
 			link = links.selectAll(".link"),
 			polygons = svg.append("g").attr("class", "polygons");
@@ -88,7 +89,7 @@
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
 				.y(function(d) { return d.y; })
-				.extent([[0, 0], [width, height]]);
+				.extent([[-1, 1], [width + 1, height + 1]]);
 
 			var diagram = {};
 
