@@ -58,6 +58,9 @@
 
 		function Graph(el, graphView) {
 			// http://blockbuilder.org/alexmacy/15962e97f7a9ebacd55710bf277593d4
+
+			// link nodes by name https://bl.ocks.org/mbostock/533daf20348023dfdd76
+
 		  d3.select(window)
 		    .on('resize', resize);
 
@@ -72,7 +75,7 @@
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
-				.force("charge", d3.forceManyBody())
+				.force("charge", d3.forceManyBody().strength(0))
 				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
 				.on("tick", ticked);
 
