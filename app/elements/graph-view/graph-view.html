@@ -33,6 +33,12 @@
 			.polygons {
 				fill: none;
 				stroke: #999;
+				pointer-events: all;
+			}
+
+			.active {
+				fill: #aaaaaa;
+				opacity: 0.1;
 			}
 
 			text {
@@ -65,7 +71,7 @@
 			var width = graphView.clientWidth, height = graphView.clientHeight;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
-				.force("link", d3.forceLink().id(function(d) {return d.__firebaseKey__;}))
+				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
 				.force("charge", d3.forceManyBody())
 				.force("center", d3.forceCenter(graphView.clientWidth / 2, graphView.clientHeight / 2))
 				.on("tick", ticked);
@@ -89,6 +95,7 @@
 					.data(graphView.nodes)
 					.enter().append("polygon")
 					.on("mouseover", mouseover)
+					.on("mouseout", mouseout)
 					.call(d3.drag()
 						.on("start", dragstarted)
 						.on("drag", dragged)
@@ -133,7 +140,12 @@
 			}
 
 			function mouseover(d) {
-				var foo = d3.select(this).nodes();
+				d3.select(this).classed("active", true);
+				d3.select(this).select(".node").classed("active", true);
+			}
+
+			function mouseout(d) {
+				d3.select(this).classed("active", false);
 			}
 
 			function dragstarted(d) {
