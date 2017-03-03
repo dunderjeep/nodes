@@ -13,6 +13,7 @@
 
 			#svg {
 				margin: 10px;
+				border: 1px solid #888;
 			}
 
 			line {
@@ -20,7 +21,7 @@
 			 	stroke-width: 1px;
 			}
 
-			.node circle {
+			circle {
 				r: 3;
 				cursor: move;
 				fill: black;
@@ -30,7 +31,7 @@
       	pointer-events: all;
       }
 
-			.polygons {
+			path {
 				fill: none;
 				stroke: #999;
 				pointer-events: all;
@@ -72,7 +73,7 @@
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = 500, height = 500;
+			var width = 500, height = 500, radius = 3;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
@@ -83,8 +84,7 @@
 			var nodes = svg.append("g").attr("class", "nodes"),
 			node = nodes.selectAll(".node"),
 			links = svg.append("g").attr("class", "links"),
-			link = links.selectAll(".link"),
-			polygons = svg.append("g").attr("class", "polygons");
+			link = links.selectAll(".link");
 
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
@@ -95,26 +95,22 @@
 
   		var update = function(){
 
-				polygons.selectAll("polygon")
-					.data(graphView.nodes)
-					.enter().append("polygon")
-					.on("mouseover", mouseover)
-					.on("mouseout", mouseout)
-					.call(d3.drag()
-						.on("start", dragstarted)
-						.on("drag", dragged)
-						.on("end", dragended));
-
-				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
+				node = node.data(graphView.nodes); //UPDATE
 				var nodeEnter = node.enter()
 					.append("g")
 					.attr("class", "node");
-				nodeEnter.append("circle");
+				nodeEnter.append("circle").attr("clip-path", function(d, i) { return "url(#clip-" + i + ")"; });
 				nodeEnter.append("text")
 					.text(function(d) { return d.__firebaseKey__; })
 					.style("display", "none");
-				node.merge(nodeEnter);
-
+				nodeEnter.append("path")
+					.attr("class", "path")
+					.attr("id", function(d, i) { return "cell-" + i; });
+				nodeEnter.append("clipPath")
+    			.attr("id", function(d, i) { return "clip-" + i; })
+  				.append("use")
+    				.attr("xlink:href", function(d, i) { return "#cell-" + i; });
+				node = node.merge(nodeEnter);
 				node.call(d3.drag()
 										.on("start", dragstarted)
 										.on("drag", dragged)
@@ -122,7 +118,7 @@
 
 				link = links.selectAll(".link").data(graphView.links);
 				if (link.enter) {
-					link.enter().append("line")
+				link =	link.enter().append("line")
 						.attr("class", "link")
 						.merge(link);
 				}
@@ -160,7 +156,7 @@
 			}
 
 			function dragged(d) {
-				//var what = d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
+				d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
 				d.fx = d3.event.x;
 				d.fy = d3.event.y;
 
@@ -175,19 +171,19 @@
 
 			function ticked() {
 
-				var diagram = voronoi.polygons(node.data());
-
-				polygons.selectAll("polygon")
-					.attr("points", function(d, i) { return diagram[i]; });
+		    nodes.selectAll("path")
+			    .data(voronoi.polygons(node.data()))
+		   	  .attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
 
 				links.selectAll(".link")
-				  .attr("x1",function(d) { return d.source.x; } )
+				  .attr("x1", function(d) { return d.source.x; } )
 				  .attr("y1", function(d) { return d.source.y; })
 				  .attr("x2", function(d) { return d.target.x; })
 				  .attr("y2", function(d) { return d.target.y; });
 
-				node
-				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
+				nodes.selectAll("circle")
+				  .attr("cx", function(d) { return d.x  = Math.max(radius, Math.min(width - radius, d.x)); })
+		      .attr("cy", function(d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
 			}
 
 			return {
