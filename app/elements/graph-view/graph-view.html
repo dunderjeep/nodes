@@ -85,8 +85,8 @@
 				.force("center", d3.forceCenter(width / 2, height / 2))
 				.on("tick", ticked);
 
-			var link = svg.append("g").attr("class", "links").selectAll(".link"),
-		    node = svg.append("g").attr("class", "nodes").selectAll(".node");
+			var link = svg.append("g").attr("class", "links").selectAll(".link");
+		  var node = svg.append("g").attr("class", "nodes").selectAll(".node");
 
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
@@ -95,7 +95,7 @@
 
   		var update = function(){
 
-				node = node.data(graphView.nodes); //UPDATE
+				node = node.data(graphView.nodes);
 				node.exit().remove();
 				var nodeEnter = node.enter()
 					.append("g")
@@ -110,19 +110,17 @@
 							 .on("end", dragended));
 				node = node.merge(nodeEnter);
 
-				// link = link.data(graphView.links);
-				// if (link.exit) link.exit().remove();
-				// if (link.enter) {
-				// 	link = link.enter().append("line")
-				// 		.attr("class", "link")
-				// 		.merge(link);
+				debugger;
 
-				// link = link.data(graphView.links);
-				// if (link.enter) {
-				// 	link = link.enter().append("line")
-				// 		.attr("class", "link")
-				// 		.merge(link);
-				// }
+				link = link.data(graphView.links);
+
+				if (link.enter) {
+					link = link.enter().append("line")
+						.attr("class", "link")
+						.merge(link);
+					}
+
+				if (link.exit) link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
 				//if (link.enter) simulation.force("link").links(graphView.links);
@@ -136,7 +134,8 @@
 
 		  function dblclick() {
 		    var point = d3.mouse(this);
-		    graphView.push("nodes", { x: point[0], y: point[1]});
+		   // graphView.push("nodes", { x: point[0], y: point[1]});
+				graphView.push("links", { source: '-KdGW1JdRNrv_MJ3KYXa', target: '-KdGYUfoIf-N0qEI3TlG'});
 			}
 
 			function mouseover(d) {
@@ -206,7 +205,7 @@
 		    }
 		  },
 
-		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
+		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)', '_fBChanged(links.*)'],
 
 		  _fBChanged: function(e) {
       	this.graph.update();
