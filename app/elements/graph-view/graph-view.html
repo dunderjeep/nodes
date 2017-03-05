@@ -76,43 +76,37 @@
 				.force("center", d3.forceCenter(width / 2, height / 2))
 				.on("tick", ticked);
 
-			var nodes = svg.append("g").attr("class", "nodes"),
-			node = nodes.selectAll(".node"),
-			links = svg.append("g").attr("class", "links"),
-			link = links.selectAll(".link");
+			var link = svg.append("g").attr("class", "links").selectAll(".link"),
+	      node = svg.append("g").attr("class", "nodes").selectAll(".node");
 
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
 				.y(function(d) { return d.y; })
 				.extent([[-1, 1], [width + 1, height + 1]]);
 
-			var diagram = {};
-
   		var update = function(){
 
-				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
+				node = node.data(graphView.nodes); //UPDATE
 				var nodeEnter = node.enter()
 					.append("g")
 					.attr("class", "node");
 				nodeEnter.append("circle");
 				nodeEnter.append("text")
-					.text(function(d) { return d.__firebaseKey__; })
-					.style("display", "none");
+					.text(function(d) { return d.__firebaseKey__; });
 				nodeEnter.append("path").attr("class", "path");
-				node.merge(nodeEnter);
+				nodeEnter.call(d3.drag()
+							 .on("start", dragstarted)
+							 .on("drag", dragged)
+							 .on("end", dragended));
+				node = node.merge(nodeEnter);
 
-				node.call(d3.drag()
-										.on("start", dragstarted)
-										.on("drag", dragged)
-										.on("end", dragended));
-
-				link = links.selectAll(".link").data(graphView.links);
-				if (link.enter) {
-					link.enter().append("line")
-						.attr("class", "link")
-						.merge(link);
+				// link = link.data(graphView.links);
+				// if (link.exit) link.exit().remove();
+				// if (link.enter) {
+				// 	link = link.enter().append("line")
+				// 		.attr("class", "link")
+				// 		.merge(link);
 				}
-				if (link.exit) link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
 				if (link.enter) simulation.force("link").links(graphView.links);
@@ -146,7 +140,7 @@
 			}
 
 			function dragged(d) {
-				//var what = d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
+				d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
 				d.fx = d3.event.x;
 				d.fy = d3.event.y;
 
@@ -163,18 +157,21 @@
 
 				var diagram = voronoi.polygons(node.data());
 
-			   nodes.selectAll("path")
-				  .data(diagram)
-			   	.attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
+				node.select("circle")
+	        .attr("cx", function(d) { return d.x; })
+	        .attr("cy", function(d) { return d.y; });
 
-				links.selectAll(".link")
-				  .attr("x1",function(d) { return d.source.x; } )
-				  .attr("y1", function(d) { return d.source.y; })
-				  .attr("x2", function(d) { return d.target.x; })
-				  .attr("y2", function(d) { return d.target.y; });
+	      node.select("path")
+	        .data(voronoi.polygons(diagram))
+	        .attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
 
-				node
-				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
+	      node.select("text")
+	        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
+
+	      // link.attr("x1", function(d) { return d.source.x; })
+	      //     .attr("y1", function(d) { return d.source.y; })
+	      //     .attr("x2", function(d) { return d.target.x; })
+	      //     .attr("y2", function(d) { return d.target.y; });
 			}
 
 			return {
