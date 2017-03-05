@@ -11,41 +11,49 @@
 			 	justify-content: center;
 			}
 
-			#svg {
-				margin: 10px;
+			svg {
+				border: 1px solid #888;
 			}
 
-			line {
-				stroke: #999;
-			 	stroke-width: 1px;
-			}
-
-			.node circle {
+			circle {
 				r: 3;
-				cursor: move;
-				fill: black;
 			}
 
-			.node {
-      	pointer-events: all;
-      }
+			path {
+	      pointer-events: all;
+	      fill: none;
+	      stroke: #666;
+	      stroke-opacity: 0.2;
+	    }
 
-			.polygon {
+	    .active path {
+	      fill: #111;
+	      opacity: 0.05;
+	    }
 
-			.polygons {
-				fill: none;
-				stroke: #999;
-				pointer-events: all;
+			.active text {
+	  		visibility: visible;
 			}
 
-			.active {
-				fill: #aaaaaa;
-				opacity: 0.1;
-			}
+	    .active circle {
+	      stroke: #000;
+	      stroke-width: 1.5px;
+	    }
 
-			text {
-				display: none;
-			}
+	    .links {
+	      stroke: #000;
+	      stroke-width: 1.5;
+	    }
+
+	    .nodes {
+	      stroke-width: 1.5;
+	    }
+
+	    text {
+	      pointer-events: none;
+	      font: 1.8em sans-serif;
+	      visibility: hidden;
+	    }
 
 		</style>
 
@@ -64,12 +72,12 @@
 
 			var svg = d3.select(el)
         .append("svg")
-        .attr("width", 500)
+        .attr("width", 960)
         .attr("height", 500)
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = 500, height = 500;
+			var width = 960, height = 500;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
@@ -78,12 +86,7 @@
 				.on("tick", ticked);
 
 			var link = svg.append("g").attr("class", "links").selectAll(".link"),
-	      node = svg.append("g").attr("class", "nodes").selectAll(".node");
-			var nodes = svg.append("g").attr("class", "nodes"),
-			node = nodes.selectAll(".node"),
-			links = svg.append("g").attr("class", "links"),
-			link = links.selectAll(".link"),
-			polygons = svg.append("g").attr("class", "polygons");
+		    node = svg.append("g").attr("class", "nodes").selectAll(".node");
 
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
@@ -92,17 +95,8 @@
 
   		var update = function(){
 
-				polygons.selectAll("polygon")
-					.data(graphView.nodes)
-					.enter().append("polygon")
-					.on("mouseover", mouseover)
-					.on("mouseout", mouseout)
-					.call(d3.drag()
-						.on("start", dragstarted)
-						.on("drag", dragged)
-						.on("end", dragended));
-
-				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
+				node = node.data(graphView.nodes); //UPDATE
+				node.exit().remove();
 				var nodeEnter = node.enter()
 					.append("g")
 					.attr("class", "node");
@@ -123,23 +117,15 @@
 				// 		.attr("class", "link")
 				// 		.merge(link);
 
-				node.merge(nodeEnter);
-
-				node.call(d3.drag()
-										.on("start", dragstarted)
-										.on("drag", dragged)
-										.on("end", dragended));
-
-				link = links.selectAll(".link").data(graphView.links);
-				if (link.enter) {
-					link.enter().append("line")
-						.attr("class", "link")
-						.merge(link);
-
-				}
+				// link = link.data(graphView.links);
+				// if (link.enter) {
+				// 	link = link.enter().append("line")
+				// 		.attr("class", "link")
+				// 		.merge(link);
+				// }
 
 				simulation.nodes(graphView.nodes);
-				if (link.enter) simulation.force("link").links(graphView.links);
+				//if (link.enter) simulation.force("link").links(graphView.links);
 				simulation.restart();
 			};
 
@@ -170,13 +156,9 @@
 			}
 
 			function dragged(d) {
-
 				d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
-
-				//var what = d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
 				d.fx = d3.event.x;
 				d.fy = d3.event.y;
-
 			}
 
 			function dragended(d) {
@@ -187,36 +169,23 @@
 			}
 
 			function ticked() {
-
-				var diagram = voronoi.polygons(node.data());
-
 				node.select("circle")
 	        .attr("cx", function(d) { return d.x; })
 	        .attr("cy", function(d) { return d.y; });
 
 	      node.select("path")
-	        .data(voronoi.polygons(diagram))
+	        .data(voronoi.polygons(node.data()))
 	        .attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
 
 	      node.select("text")
 	        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 
-	      // link.attr("x1", function(d) { return d.source.x; })
-	      //     .attr("y1", function(d) { return d.source.y; })
-	      //     .attr("x2", function(d) { return d.target.x; })
-	      //     .attr("y2", function(d) { return d.target.y; });
+				// link
+				//   .attr("x1",function(d) { return d.source.x; } )
+				//   .attr("y1", function(d) { return d.source.y; })
+				//   .attr("x2", function(d) { return d.target.x; })
+				//   .attr("y2", function(d) { return d.target.y; });
 
-				polygons.selectAll("polygon")
-					.attr("points", function(d, i) { return diagram[i]; });
-
-				links.selectAll(".link")
-				  .attr("x1",function(d) { return d.source.x; } )
-				  .attr("y1", function(d) { return d.source.y; })
-				  .attr("x2", function(d) { return d.target.x; })
-				  .attr("y2", function(d) { return d.target.y; });
-
-				node
-				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 			}
 
 			return {
