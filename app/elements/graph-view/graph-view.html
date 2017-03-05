@@ -21,7 +21,7 @@
 			 	stroke-width: 1px;
 			}
 
-			circle {
+			.node circle {
 				r: 3;
 				cursor: move;
 				fill: black;
@@ -31,7 +31,7 @@
       	pointer-events: all;
       }
 
-			path {
+			.polygon {
 				fill: none;
 				stroke: #999;
 				pointer-events: all;
@@ -58,11 +58,6 @@
 	<script>
 
 		function Graph(el, graphView) {
-			// http://blockbuilder.org/alexmacy/15962e97f7a9ebacd55710bf277593d4
-
-			// link nodes by name https://bl.ocks.org/mbostock/533daf20348023dfdd76
-			// modifying a force layout https://bl.ocks.org/mbostock/1095795
-
 		  // d3.select(window)
 		  //   .on('resize', resize);
 
@@ -73,7 +68,7 @@
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = 500, height = 500, radius = 3;
+			var width = 500, height = 500;
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
@@ -95,22 +90,17 @@
 
   		var update = function(){
 
-				node = node.data(graphView.nodes); //UPDATE
+				node = nodes.selectAll("g").data(graphView.nodes); //UPDATE
 				var nodeEnter = node.enter()
 					.append("g")
 					.attr("class", "node");
-				nodeEnter.append("circle").attr("clip-path", function(d, i) { return "url(#clip-" + i + ")"; });
+				nodeEnter.append("circle");
 				nodeEnter.append("text")
 					.text(function(d) { return d.__firebaseKey__; })
 					.style("display", "none");
-				nodeEnter.append("path")
-					.attr("class", "path")
-					.attr("id", function(d, i) { return "cell-" + i; });
-				nodeEnter.append("clipPath")
-    			.attr("id", function(d, i) { return "clip-" + i; })
-  				.append("use")
-    				.attr("xlink:href", function(d, i) { return "#cell-" + i; });
-				node = node.merge(nodeEnter);
+				nodeEnter.append("path").attr("class", "path");
+				node.merge(nodeEnter);
+
 				node.call(d3.drag()
 										.on("start", dragstarted)
 										.on("drag", dragged)
@@ -118,7 +108,7 @@
 
 				link = links.selectAll(".link").data(graphView.links);
 				if (link.enter) {
-				link =	link.enter().append("line")
+					link.enter().append("line")
 						.attr("class", "link")
 						.merge(link);
 				}
@@ -156,7 +146,7 @@
 			}
 
 			function dragged(d) {
-				d3.select(this).select("circle").attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+				//var what = d3.select(this).select("g").attr("cx", d.fx = d3.event.x).attr("cy", d.fy = d3.event.y);
 				d.fx = d3.event.x;
 				d.fy = d3.event.y;
 
@@ -171,19 +161,20 @@
 
 			function ticked() {
 
-		    nodes.selectAll("path")
-			    .data(voronoi.polygons(node.data()))
-		   	  .attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
+				var diagram = voronoi.polygons(node.data());
+
+			   nodes.selectAll("path")
+				  .data(diagram)
+			   	.attr("d", function(d) { return d == null ? null : "M" + d.join("L") + "Z"; });
 
 				links.selectAll(".link")
-				  .attr("x1", function(d) { return d.source.x; } )
+				  .attr("x1",function(d) { return d.source.x; } )
 				  .attr("y1", function(d) { return d.source.y; })
 				  .attr("x2", function(d) { return d.target.x; })
 				  .attr("y2", function(d) { return d.target.y; });
 
-				nodes.selectAll("circle")
-				  .attr("cx", function(d) { return d.x  = Math.max(radius, Math.min(width - radius, d.x)); })
-		      .attr("cy", function(d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
+				node
+				 	.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 			}
 
 			return {
