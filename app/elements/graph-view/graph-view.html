@@ -110,9 +110,7 @@
 							 .on("end", dragended));
 				node = node.merge(nodeEnter);
 
-				debugger;
-
-				link = link.data(graphView.links);
+				link = svg.select(".links").selectAll(".link").data(graphView.links);
 
 				if (link.enter) {
 					link = link.enter().append("line")
@@ -123,7 +121,7 @@
 				if (link.exit) link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
-				//if (link.enter) simulation.force("link").links(graphView.links);
+				if (link.enter) simulation.force("link").links(graphView.links);
 				simulation.restart();
 			};
 
@@ -179,11 +177,11 @@
 	      node.select("text")
 	        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 
-				// link
-				//   .attr("x1",function(d) { return d.source.x; } )
-				//   .attr("y1", function(d) { return d.source.y; })
-				//   .attr("x2", function(d) { return d.target.x; })
-				//   .attr("y2", function(d) { return d.target.y; });
+				svg.selectAll(".link")
+				  .attr("x1",function(d) { return d.source.x; } )
+				  .attr("y1", function(d) { return d.source.y; })
+				  .attr("x2", function(d) { return d.target.x; })
+				  .attr("y2", function(d) { return d.target.y; });
 
 			}
 
