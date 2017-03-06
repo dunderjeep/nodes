@@ -77,16 +77,20 @@
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = 960, height = 500;
+			var width = 960,
+			  height = 500,
+			  color = d3.scaleOrdinal(d3.schemeCategory10);
 
 			var simulation = d3.forceSimulation(graphView.nodes)
-				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
-				.force("charge", d3.forceManyBody().strength(0))
+				.force("charge", d3.forceManyBody().strength(-10))
+				.force("link", d3.forceLink()
+												.id(function(d) { return d.__firebaseKey__; })
+												.distance(100))
 				.force("center", d3.forceCenter(width / 2, height / 2))
 				.on("tick", ticked);
 
-			var link = svg.append("g").attr("class", "links").selectAll(".link"),
-		    node = svg.append("g").attr("class", "nodes").selectAll(".node");
+			var link = svg.append("g").attr("class", "links").selectAll(".link");
+		  var node = svg.append("g").attr("class", "nodes").selectAll(".node");
 
 			var voronoi = d3.voronoi()
 				.x(function(d) { return d.x; })
@@ -95,14 +99,20 @@
 
   		var update = function(){
 
-				node = node.data(graphView.nodes); //UPDATE
+				node = node.data(graphView.nodes);
 				node.exit().remove();
 				var nodeEnter = node.enter()
 					.append("g")
-					.attr("class", "node");
-				nodeEnter.append("circle");
+					.attr("class", "node")
+					.on("mouseover", mouseover)
+					.on("mouseout", mouseout);
+				nodeEnter.append("circle")
+					.attr("fill", function(d) { return color(d.id); });
 				nodeEnter.append("text")
-					.text(function(d) { return d.__firebaseKey__; });
+					.attr("dx", 12)
+					.attr("dy", ".35em")
+					.text(function(d, i) { return i; });
+					// .text(function(d) { return d.__firebaseKey__; });
 				nodeEnter.append("path").attr("class", "path");
 				nodeEnter.call(d3.drag()
 							 .on("start", dragstarted)
@@ -110,22 +120,18 @@
 							 .on("end", dragended));
 				node = node.merge(nodeEnter);
 
-				// link = link.data(graphView.links);
-				// if (link.exit) link.exit().remove();
-				// if (link.enter) {
-				// 	link = link.enter().append("line")
-				// 		.attr("class", "link")
-				// 		.merge(link);
+				link = svg.select(".links").selectAll(".link").data(graphView.links);
 
-				// link = link.data(graphView.links);
-				// if (link.enter) {
-				// 	link = link.enter().append("line")
-				// 		.attr("class", "link")
-				// 		.merge(link);
-				// }
+				if (link.enter) {
+					link = link.enter().append("line")
+						.attr("class", "link")
+						.merge(link);
+					}
+
+				if (link.exit) link.exit().remove();
 
 				simulation.nodes(graphView.nodes);
-				//if (link.enter) simulation.force("link").links(graphView.links);
+				if (link.enter) simulation.force("link").links(graphView.links);
 				simulation.restart();
 			};
 
@@ -137,16 +143,16 @@
 		  function dblclick() {
 		    var point = d3.mouse(this);
 		    graphView.push("nodes", { x: point[0], y: point[1]});
+				//graphView.push("links", { source: '-KdGW1JdRNrv_MJ3KYXa', target: '-KdGYUfoIf-N0qEI3TlG'});
 			}
 
 			function mouseover(d) {
-				d3.select(this).classed("active", true);
-				d3.select(this).select(".node").classed("active", true);
-			}
+	      d3.select(this).raise().classed("active", true);
+	    }
 
-			function mouseout(d) {
-				d3.select(this).classed("active", false);
-			}
+	    function mouseout(d) {
+	      d3.select(this).raise().classed("active", false);
+	    }
 
 			function dragstarted(d) {
 				//d3.select(this).raise().classed("active", true);
@@ -180,11 +186,11 @@
 	      node.select("text")
 	        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")" });
 
-				// link
-				//   .attr("x1",function(d) { return d.source.x; } )
-				//   .attr("y1", function(d) { return d.source.y; })
-				//   .attr("x2", function(d) { return d.target.x; })
-				//   .attr("y2", function(d) { return d.target.y; });
+				svg.selectAll(".link")
+				  .attr("x1",function(d) { return d.source.x; } )
+				  .attr("y1", function(d) { return d.source.y; })
+				  .attr("x2", function(d) { return d.target.x; })
+				  .attr("y2", function(d) { return d.target.y; });
 
 			}
 
@@ -206,7 +212,7 @@
 		    }
 		  },
 
-		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)'],
+		  observers: ['_fBChanged(links.splices)', '_fBChanged(nodes.*)', '_fBChanged(links.*)'],
 
 		  _fBChanged: function(e) {
       	this.graph.update();
