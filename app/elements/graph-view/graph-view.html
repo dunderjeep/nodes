@@ -77,7 +77,9 @@
         .attr("class", "svg")
         .on("dblclick", dblclick);
 
-			var width = 960, height = 500;
+			var width = 960,
+			  height = 500,
+			  color = d3.scaleOrdinal(d3.schemeCategory10);
 
 			var simulation = d3.forceSimulation(graphView.nodes)
 				.force("link", d3.forceLink().id(function(d) { return d.__firebaseKey__; }))
@@ -99,9 +101,14 @@
 				node.exit().remove();
 				var nodeEnter = node.enter()
 					.append("g")
-					.attr("class", "node");
-				nodeEnter.append("circle");
+					.attr("class", "node")
+					.on("mouseover", mouseover)
+					.on("mouseout", mouseout);
+				nodeEnter.append("circle")
+					.attr("fill", function(d) { return color(d.id); });
 				nodeEnter.append("text")
+					.attr("dx", 12)
+					.attr("dy", ".35em")
 					.text(function(d) { return d.__firebaseKey__; });
 				nodeEnter.append("path").attr("class", "path");
 				nodeEnter.call(d3.drag()
@@ -132,18 +139,17 @@
 
 		  function dblclick() {
 		    var point = d3.mouse(this);
-		   // graphView.push("nodes", { x: point[0], y: point[1]});
-				graphView.push("links", { source: '-KdGW1JdRNrv_MJ3KYXa', target: '-KdGYUfoIf-N0qEI3TlG'});
+		    graphView.push("nodes", { x: point[0], y: point[1]});
+				//graphView.push("links", { source: '-KdGW1JdRNrv_MJ3KYXa', target: '-KdGYUfoIf-N0qEI3TlG'});
 			}
 
 			function mouseover(d) {
-				d3.select(this).classed("active", true);
-				d3.select(this).select(".node").classed("active", true);
-			}
+	      d3.select(this).raise().classed("active", true);
+	    }
 
-			function mouseout(d) {
-				d3.select(this).classed("active", false);
-			}
+	    function mouseout(d) {
+	      d3.select(this).raise().classed("active", false);
+	    }
 
 			function dragstarted(d) {
 				//d3.select(this).raise().classed("active", true);
